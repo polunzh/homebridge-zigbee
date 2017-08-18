@@ -1,14 +1,28 @@
 {
-  "name": "zigbee-demo",
+  "name": "homebridge-zigbee",
   "version": "1.0.0",
-  "description": "",
+  "description": "homebridge zigbee plugin",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "node": ">=6.0.0",
+    "homebridge": ">=0.4.1"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "zigbee"
+  ],
   "dependencies": {
+    "lodash": "^4.17.4",
+    "node-persist": "^2.1.0",
     "serialport": "^5.0.0-beta8"
   }
 }
