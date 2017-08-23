@@ -1,11 +1,13 @@
 const EventEmitter = require('events');
 const SerialPort = require('serialport');
+const DataHandler = require('./lib/DataHandler');
 const lib = require('./lib.js');
 
 const SIGNALTYPE = {
     DEVICE_ONLINE: '82',
     ENDPOINT: '83',
-    BULB_SWITCH_STATE: '85'
+    BULB_SWITCH_STATE: '85',
+    BULB_BRIGHTNESS_STATE: '86'
 };
 
 class SerialClient extends EventEmitter {
@@ -16,12 +18,14 @@ class SerialClient extends EventEmitter {
         this.isRequest = false;
         this.handler = null;
         this.commandHandlers = {};
+        this.dataHandler = new DataHandler();
 
         this.commandHandlers[SIGNALTYPE.DEVICE_ONLINE] = this.deivceOnline.bind(this);
-        this.commandHandlers[SIGNALTYPE.ENDPOINT] = this.endpointAddressHandler.bind(this);
-        this.commandHandlers[SIGNALTYPE.BULB_SWITCH_STATE] = this.bulbSwitchStateHandler.bind(this);
+        this.commandHandlers[SIGNALTYPE.ENDPOINT] = this.dataHandler.endpointAddressHandler.bind(this);
+        this.commandHandlers[SIGNALTYPE.BULB_SWITCH_STATE] = this.dataHandler.bulbSwitchStateHandler.bind(this);
+        this.commandHandlers[SIGNALTYPE.BULB_BRIGHTNESS_STATE] = this.dataHandler.bulbBrightnessStateHandler.bind(this);
 
-        this.port = new SerialPort('COM12', {
+        this.port = new SerialPort('COM10', {
             baudRate: 115200
         });
 
@@ -46,10 +50,6 @@ class SerialClient extends EventEmitter {
                 let item = this.queue.shift();
                 this.handler = item.handler;
                 this.signalType = item.signalType;
-
-                // setTimeout(() => {
-                // this.reset(new Error('time out'));
-                // }, 1000);
 
                 this.sendData(item.data);
             }
@@ -81,9 +81,6 @@ class SerialClient extends EventEmitter {
     handleData(data) {
         const command = data.substr(6, 2);
 
-        // console.log(data);
-        // console.log(`command: ${command}`);
-
         if (command.startsWith('4')) return; // 如果是串口的应答帧则忽略
 
         if (command === SIGNALTYPE.DEVICE_ONLINE) return this.deivceOnline(data);
@@ -113,6 +110,21 @@ class SerialClient extends EventEmitter {
         this.send(data, SIGNALTYPE.BULB_SWITCH_STATE, callback);
     }
 
+    getBulbBrightness(addr, endpoint, callback) {
+        let data = `FE0C050602${addr}${endpoint}880000`;
+        this.send(data, SIGNALTYPE.BULB_BRIGHTNESS_STATE, callback);
+    }
+
+    getBulbState(addr, endpoint, callback) {
+        this.getBulbSwitchState(addr, endpoint, (err, state) => {
+            if (err) return callback(err);
+
+            this.getBulbBrightness(addr, endpoint, (err, brightness) => {
+                return callback(null, { power: state, brightness: brightness });
+            });
+        });
+    }
+
     switchBulb(state, addr, endpoint) {
         let val = state === 1 ? '01' : '00';
         let data = `FE0B050102${addr}${endpoint}88${val}`;
@@ -120,32 +132,23 @@ class SerialClient extends EventEmitter {
         this.send(data, SIGNALTYPE.SWITCHBULB);
     }
 
-    // end region
+    setBrightness(value, addr, endpoint) {
+        value = (value).toString(16);
+        if (value.length === 1) value = '0' + value;
 
-    // #region 返回命令的处理
+        let data = `FE0E050202${addr}${endpoint}8800${value}0000`;
+        this.send(data, SIGNALTYPE.SWITCHBULB);
+    }
+
+    // end region
     deivceOnline(data) {
         const self = this;
 
         const addr = data.substr(10, 4);
         const mac = data.substr(22, 16);
 
-        this.emit('deviceOnline', { addr, mac })
+        this.emit('deviceOnline', { addr, mac });
     }
-
-    endpointAddressHandler(data, hd) {
-        const addr = data.substr(10, 4);
-        const endpoint = data.substr(-4, 2);
-
-        return hd(null, { addr, endpoint });
-    }
-
-    bulbSwitchStateHandler(data, hd) {
-        let state = data.substr(-4, 2);
-
-        return hd(null, state === '01');
-    }
-
-    // #region
 }
 
 module.exports = SerialClient;

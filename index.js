@@ -40,10 +40,34 @@ class OsramPlatform {
             this.api.on('didFinishLaunching', () => {
                 this.log('DidFinishLaunching...');
 
+                storage.forEach((x) => {
+                    let item = storage.getItemSync(x);
+                    if (this.accessories[x] === undefined) storage.removeItem(x);
+                    else {
+                        serialClient.getBulbState(
+                            item.addr,
+                            item.endpoint,
+                            (err, state) => {
+                                this.accessories[x] =
+                                    new OsramAccessory(new Device(item.mac, item.addr, item.endpoint),
+                                        this.accessories[x],
+                                        this.log,
+                                        state)
+                            });
+                    }
+                });
+
                 serialClient.on('deviceOnline', (deviceInfo) => {
                     serialClient.getEndPoint(deviceInfo.addr, (err, endpointInfo) => {
                         if (err) { this.log(err); return false };
                         const uuid = UUIDGen.generate(deviceInfo.mac);
+
+                        // 临时存储
+                        storage.setItem(uuid, {
+                            mac: deviceInfo.mac,
+                            addr: deviceInfo.addr,
+                            endpoint: endpointInfo.endpoint
+                        });
 
                         //如果已存在该设备，则更新Accessory中的网络地址和终端号
                         if (this.accessories[uuid]) {
@@ -67,7 +91,6 @@ class OsramPlatform {
         this.accessories[accessory.UUID] = accessory;
     }
 
-
     openLight(macAddress, callback) {
         const self = this;
 
@@ -83,29 +106,35 @@ class OsramPlatform {
 
     addAccessory(device, uuid) {
         const self = this;
-        const accessory = new PlatformAccessory(device.name, uuid);
 
-        accessory.context.name = device.name;
-        accessory.context.make = 'OSRAM';
-        accessory.context.model = 'OSRAM';
+        serialClient.getBulbState(device.addr, device.endpoint, (err, state) => {
+            if (err) return callback(err);
 
-        accessory.getService(Service.AccessoryInformation)
-            .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
-            .setCharacteristic(Characteristic.Model, accessory.context.model)
+            const accessory = new PlatformAccessory(device.name, uuid);
+            accessory.context.name = device.name;
+            accessory.context.make = 'OSRAM';
+            accessory.context.model = 'OSRAM';
 
-        const service = accessory.addService(Service.Lightbulb, device.name);
-        service.addCharacteristic(Characteristic.Brightness);
+            accessory.getService(Service.AccessoryInformation)
+                .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
+                .setCharacteristic(Characteristic.Model, accessory.context.model);
 
-        self.accessories[accessory.UUID] = new OsramAccessory(device, accessory, self.log);
-        self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory])
-        self.log('new osram device added...');
+            const service = accessory.addService(Service.Lightbulb, device.name);
+            service.addCharacteristic(Characteristic.Brightness);
+
+            self.accessories[accessory.UUID] = new OsramAccessory(device, accessory, self.log, state);
+            self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory])
+            self.log('New osram device added...');
+        });
     }
 }
 
 class OsramAccessory {
-    constructor(device, accessory, log) {
+    constructor(device, accessory, log, data) {
         this.log = log;
         this.accessory = accessory;
+        this.power = data.power || 0;
+        this.brightness = data.brightness || 0;
 
         if (!(accessory instanceof PlatformAccessory)) this.log('ERROR \n', this);
 
@@ -115,6 +144,7 @@ class OsramAccessory {
 
     addEventHandlers() {
         this.addEventHandler(Service.Lightbulb, Characteristic.On);
+        this.addEventHandler(Service.Lightbulb, Characteristic.Brightness);
     }
 
     addEventHandler(service, characteristic) {
@@ -128,18 +158,17 @@ class OsramAccessory {
 
         switch (characteristic) {
             case Characteristic.On:
-                console.log('zhangzhenqiangfffffffffffffffffff');
                 service
                     .getCharacteristic(Characteristic.On)
-                    // .setValue(this.power > 0)
+                    .setValue(this.power === 1)
                     .on('get', this.getPower.bind(this))
                     .on('set', this.setPower.bind(this));
                 break;
             case Characteristic.Brightness:
                 service
                     .getCharacteristic(Characteristic.Brightness)
-                    .setValue(this.color.brightness)
-                    .setProps({ minValue: 1 })
+                    .setValue(this.brightness)
+                    .setProps({ minValue: 1, maxValue: 255 })
                     .on('set', this.setBrightness.bind(this));
                 break;
         }
@@ -153,12 +182,19 @@ class OsramAccessory {
     getPower(callback) {
         serialClient.getBulbSwitchState(this.device.addr, this.device.endpoint, (err, val) => {
             if (err) return callback(err);
+
+            console.log(`------power:${val}-------`);
             callback(null, val);
         });
     }
 
     setPower(state, callback) {
         serialClient.switchBulb(state, this.device.addr, this.device.endpoint);
+        return callback(null);
+    }
+
+    setBrightness(value, callback) {
+        serialClient.setBrightness(value, this.device.addr, this.device.endpoint);
         return callback(null);
     }
 }
