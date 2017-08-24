@@ -1,11 +1,14 @@
-const SerialClient = require('./serialclient.js');
+const SerialClient = require('./lib/serialclient.js');
+const util = require('./lib/util');
 
+console.log(util.generateCommand('FE0E050202d37a038800dd0000'));
+// FE0E050202D37A038800FE000029
+// FE0E050202d37a038800dd0000
 /*
 var port = new SerialPort('/dev/ttyS3', {
     baudRate: 115200
 });
 */
-const client = new SerialClient({ log: (msg) => console.log(msg) });
 // client.send('FE0B050102D37A038801', (err, res) => {
 //     console.log('open');
 //     console.log(err);
@@ -19,8 +22,3 @@ const client = new SerialClient({ log: (msg) => console.log(msg) });
 //     console.log(err);
 //     console.log(res);
 // });
-
-client.getBulbSwitchState('d37a', '03', (a, b) => {
-    console.log(a);
-    console.log(b);
-});

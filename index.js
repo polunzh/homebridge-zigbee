@@ -3,8 +3,8 @@ const storage = require('node-persist');
 const path = require('path');
 const SerialPort = require('serialport');
 const _ = require('lodash');
-const lib = require('./lib');
-const SerialClient = require('./serialclient');
+const util = require('./lib/util');
+const OsramClient = require('./lib/osramclient');
 
 const PLATFORM_NAME = 'Osram';
 const PLUGIN_NAME = 'homebridge-osram';
@@ -12,7 +12,7 @@ let PlatformAccessory, Service, Characteristic;
 let deviceAddress = Object.create(null);
 let isSerialPortOpened = false;
 
-const serialClient = new SerialClient();
+const osramClient = new OsramClient();
 
 module.exports = function (homebridge) {
     console.log("homebridge API version: " + homebridge.version);
@@ -44,7 +44,7 @@ class OsramPlatform {
                     let item = storage.getItemSync(x);
                     if (this.accessories[x] === undefined) storage.removeItem(x);
                     else {
-                        serialClient.getBulbState(
+                        osramClient.getBulbState(
                             item.addr,
                             item.endpoint,
                             (err, state) => {
@@ -57,8 +57,8 @@ class OsramPlatform {
                     }
                 });
 
-                serialClient.on('deviceOnline', (deviceInfo) => {
-                    serialClient.getEndPoint(deviceInfo.addr, (err, endpointInfo) => {
+                osramClient.on('deviceOnline', (deviceInfo) => {
+                    osramClient.getEndPoint(deviceInfo.addr, (err, endpointInfo) => {
                         if (err) { this.log(err); return false };
                         const uuid = UUIDGen.generate(deviceInfo.mac);
 
@@ -91,23 +91,10 @@ class OsramPlatform {
         this.accessories[accessory.UUID] = accessory;
     }
 
-    openLight(macAddress, callback) {
-        const self = this;
-
-        if (!deviceAddress || deviceAddress[macAddress]) return callback(new Error('No such a device'));
-        let data = `fe0b050102${addr}${port}8801`;
-
-        self.port.write(lib.generateCommand(data), (err) => {
-            if (err) throw err;
-
-            console.log('open command is send...');
-        });
-    }
-
     addAccessory(device, uuid) {
         const self = this;
 
-        serialClient.getBulbState(device.addr, device.endpoint, (err, state) => {
+        osramClient.getBulbState(device.addr, device.endpoint, (err, state) => {
             if (err) return callback(err);
 
             const accessory = new PlatformAccessory(device.name, uuid);
@@ -168,7 +155,7 @@ class OsramAccessory {
                 service
                     .getCharacteristic(Characteristic.Brightness)
                     .setValue(this.brightness)
-                    .setProps({ minValue: 1, maxValue: 255 })
+                    .setProps({ minValue: 0, maxValue: 100 })
                     .on('set', this.setBrightness.bind(this));
                 break;
         }
@@ -180,7 +167,7 @@ class OsramAccessory {
     }
 
     getPower(callback) {
-        serialClient.getBulbSwitchState(this.device.addr, this.device.endpoint, (err, val) => {
+        osramClient.getBulbSwitchState(this.device.addr, this.device.endpoint, (err, val) => {
             if (err) return callback(err);
 
             console.log(`------power:${val}-------`);
@@ -189,12 +176,12 @@ class OsramAccessory {
     }
 
     setPower(state, callback) {
-        serialClient.switchBulb(state, this.device.addr, this.device.endpoint);
+        osramClient.switchBulb(state, this.device.addr, this.device.endpoint);
         return callback(null);
     }
 
     setBrightness(value, callback) {
-        serialClient.setBrightness(value, this.device.addr, this.device.endpoint);
+        osramClient.setBrightness(value, this.device.addr, this.device.endpoint);
         return callback(null);
     }
 }
