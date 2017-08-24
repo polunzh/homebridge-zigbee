@@ -48,11 +48,13 @@ class OsramPlatform {
                             item.addr,
                             item.endpoint,
                             (err, state) => {
+                                console.log('---------------');
+                                console.log(state);
                                 this.accessories[x] =
                                     new OsramAccessory(new Device(item.mac, item.addr, item.endpoint),
                                         this.accessories[x],
                                         this.log,
-                                        state)
+                                        state);
                             });
                     }
                 });
@@ -170,7 +172,6 @@ class OsramAccessory {
         osramClient.getBulbSwitchState(this.device.addr, this.device.endpoint, (err, val) => {
             if (err) return callback(err);
 
-            console.log(`------power:${val}-------`);
             callback(null, val);
         });
     }
