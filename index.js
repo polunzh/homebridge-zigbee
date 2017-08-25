@@ -48,8 +48,6 @@ class OsramPlatform {
                             item.addr,
                             item.endpoint,
                             (err, state) => {
-                                console.log('---------------');
-                                console.log(state);
                                 this.accessories[x] =
                                     new OsramAccessory(new Device(item.mac, item.addr, item.endpoint),
                                         this.accessories[x],
@@ -160,6 +158,11 @@ class OsramAccessory {
                     .setProps({ minValue: 0, maxValue: 100 })
                     .on('set', this.setBrightness.bind(this));
                 break;
+            case Characteristic.ColorTemperature:
+                service.getCharacteristic(Characteristic.ColorTemperature)
+                    .setValue(200)
+                    .setProps({ minValue: 160, maxValue: 370 })
+                    .on('set', this.setColorTemperature);
         }
     }
 
@@ -183,6 +186,10 @@ class OsramAccessory {
 
     setBrightness(value, callback) {
         osramClient.setBrightness(value, this.device.addr, this.device.endpoint);
+        return callback(null);
+    }
+
+    setColorTemperature(value, callback) {
         return callback(null);
     }
 }
