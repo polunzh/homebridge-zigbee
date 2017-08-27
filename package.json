@@ -2,8 +2,9 @@
   "name": "homebridge-zigbee",
   "version": "1.0.0",
   "description": "homebridge zigbee plugin",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "babel src -d dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
@@ -24,5 +25,8 @@
     "lodash": "^4.17.4",
     "node-persist": "^2.1.0",
     "serialport": "^5.0.0-beta8"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0"
   }
 }

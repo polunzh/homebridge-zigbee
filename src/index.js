@@ -8,7 +8,7 @@ const OsramClient = require('./lib/osramclient');
 
 const PLATFORM_NAME = 'Osram';
 const PLUGIN_NAME = 'homebridge-osram';
-let PlatformAccessory, Service, Characteristic;
+let PlatformAccessory, Service, Characteristic, UUIDGen;
 let deviceAddress = Object.create(null);
 let isSerialPortOpened = false;
 

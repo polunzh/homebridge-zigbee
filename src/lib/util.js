@@ -1,4 +1,4 @@
-module.exports = util = {
+const util = {
     xorChecker(data) {
         if (data) {
             let sum = parseInt(data.substr(0, 2), '16');
@@ -25,3 +25,5 @@ module.exports = util = {
         return val;
     }
 };
+
+module.exports = util;
