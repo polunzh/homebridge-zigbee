@@ -2,9 +2,9 @@ const EventEmitter = require('events');
 const SerialPort = require('serialport');
 const DataHandler = require('./dataHandler');
 const util = require('./util');
-const config = require('./config');
+const config = require('../config');
 
-const SIGNALTYPE = require('./config').SIGNALTYPE;
+const SIGNALTYPE = config.SIGNALTYPE;
 
 class SerialClient extends EventEmitter {
     constructor() {

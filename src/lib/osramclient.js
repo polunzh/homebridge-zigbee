@@ -1,5 +1,5 @@
 const SerialClient = require('./serialclient');
-const SIGNALTYPE = require('./config').SIGNALTYPE;
+const SIGNALTYPE = require('../config').SIGNALTYPE;
 const EventEmitter = require('events');
 const util = require('./util');
 
