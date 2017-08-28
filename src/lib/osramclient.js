@@ -1,7 +1,10 @@
+const debug = require('debug');
 const SerialClient = require('./serialclient');
 const SIGNALTYPE = require('../config').SIGNALTYPE;
 const EventEmitter = require('events');
 const util = require('./util');
+
+const logger = debug('homebridge-osram:osramclient')
 
 class OsramClient extends EventEmitter {
     constructor() {
@@ -63,8 +66,6 @@ class OsramClient extends EventEmitter {
     switchBulb(state, addr, endpoint) {
         let val = state ? '01' : '00';
         let data = `FE0B050102${addr}${endpoint}88${val}`;
-        console.log('---------------------', state);
-        console.log(data);
 
         this.serialClient.send(data, SIGNALTYPE.SWITCHBULB);
     }

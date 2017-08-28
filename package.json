@@ -21,10 +21,10 @@
     "zigbee"
   ],
   "dependencies": {
+    "debug": "^3.0.1",
     "lodash": "^4.17.4",
     "node-persist": "^2.1.0",
     "serialport": "^5.0.0-beta8"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

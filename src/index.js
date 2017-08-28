@@ -1,3 +1,4 @@
+const debug = require('debug');
 const inherits = require('util').inherits;
 const storage = require('node-persist');
 const path = require('path');
@@ -13,9 +14,10 @@ let deviceAddress = Object.create(null);
 let isSerialPortOpened = false;
 
 let osramClient = null;
+const logger = debug('homebridge-osram:index');
 
 module.exports = function (homebridge) {
-    console.log("homebridge API version: " + homebridge.version);
+    logger("homebridge API version: " + homebridge.version);
 
     storage.initSync({ dir: path.join(process.cwd(), '.node-persist', 'homebridge-osram') });
 
@@ -49,8 +51,6 @@ class OsramPlatform {
             osramClient.openNetwork((err, state) => {
                 this.log('Network is opened...');
                 storage.forEach((x) => {
-                    // console.log('***'.repeat(20));
-                    // console.log('add handler...');
                     let item = storage.getItemSync(x);
                     if (this.accessories[x] === undefined) storage.removeItem(x);
                     else {

@@ -1,11 +1,11 @@
 module.exports = {
     SIGNALTYPE: {
-        DEVICE_ONLINE: '82',
-        ENDPOINT: '83',
-        BULB_SWITCH_STATE: '85',
-        BULB_BRIGHTNESS_STATE: '86',
-        BULB_COLORTEMPERATURE_STATE: '88',
-        NETWORK_OPEN: '41',
+        DEVICE_ONLINE: '0282',
+        ENDPOINT: '0283',
+        BULB_SWITCH_STATE: '0585',
+        BULB_BRIGHTNESS_STATE: '0586',
+        BULB_COLORTEMPERATURE_STATE: '0588',
+        NETWORK_OPEN: '0241',
     },
-    SERIALPORT: 'COM12'
+    SERIALPORT: 'COM11'
 };

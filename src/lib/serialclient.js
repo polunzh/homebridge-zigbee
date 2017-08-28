@@ -1,9 +1,11 @@
+const debug = require('debug');
 const EventEmitter = require('events');
 const SerialPort = require('serialport');
 const DataHandler = require('./dataHandler');
 const util = require('./util');
 const config = require('../config');
 
+const logger = debug('homebridge:serialclient');
 const SIGNALTYPE = config.SIGNALTYPE;
 
 class SerialClient extends EventEmitter {
@@ -35,8 +37,7 @@ class SerialClient extends EventEmitter {
 
         this.port.on('data', (data) => {
             data = data.toString('hex').toLowerCase();
-            console.log(`data received...${data}`);
-
+            logger(`data received...${data}`);
 
             if (data.startsWith('fe')) {
                 this.tempLength = parseInt(data.substr(2, 2), 16) * 2;
@@ -54,7 +55,7 @@ class SerialClient extends EventEmitter {
             this.tempData = '';
             this.tempLength = -1;
 
-            console.log(`data receive completed...${data}`);
+            logger(`data receive completed...${data}`);
 
             if (!this.checkReceiveData(data)) return; // 如果
 
@@ -62,8 +63,7 @@ class SerialClient extends EventEmitter {
         });
 
         this.port.on('error', (err) => {
-            console.log('error...');
-            console.log(err);
+            logger('error', err);
 
             this.reset(err);
         });
@@ -108,15 +108,15 @@ class SerialClient extends EventEmitter {
             if (err) throw err;
 
             if (!this.handler) this.reset(null); // 如果没有回调函数，则继续下一个请求
-            console.log(`----------------------------command is send... ${new Date().getTime()}`);
+            logger(`command is send... ${new Date().getTime()}`);
         });
     }
 
     handleData(data) {
 
-        const command = data.substr(6, 2);
+        const command = data.substr(4, 4);
 
-        if (!command.startsWith('41') && command.startsWith('4')) return; // 如果是串口的应答帧则忽略
+        if (!command === SIGNALTYPE.NETWORK_OPEN && command[2] === '4') return; // 如果是串口的应答帧则忽略
 
         if (command === SIGNALTYPE.DEVICE_ONLINE) return this.deivceOnline(data);
 
