@@ -116,7 +116,7 @@ class SerialClient extends EventEmitter {
 
         const command = data.substr(4, 4);
 
-        if (!command === SIGNALTYPE.NETWORK_OPEN && command[2] === '4') return; // 如果是串口的应答帧则忽略
+        if (command !== SIGNALTYPE.NETWORK_OPEN && command[2] === '4') return; // 如果是串口的应答帧则忽略
 
         if (command === SIGNALTYPE.DEVICE_ONLINE) return this.deivceOnline(data);
 
