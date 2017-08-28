@@ -106,24 +106,28 @@ class OsramPlatform {
     addAccessory(device, uuid) {
         const self = this;
 
-        osramClient.getBulbState(device.addr, device.endpoint, (err, state) => {
-            if (err) return callback(err);
+        osramClient.getHADeviceInfo(device.addr, device.endpoint, (err, deviceInfo) => {
+            console.log('---'.repeat(20));
+            console.log(deviceInfo);
+            osramClient.getBulbState(device.addr, device.endpoint, (err, state) => {
+                if (err) return callback(err);
 
-            const accessory = new PlatformAccessory(device.name, uuid);
-            accessory.context.name = device.name;
-            accessory.context.make = 'OSRAM';
-            accessory.context.model = 'OSRAM';
+                const accessory = new PlatformAccessory(device.name, uuid);
+                accessory.context.name = device.name;
+                accessory.context.make = 'OSRAM';
+                accessory.context.model = 'OSRAM';
 
-            accessory.getService(Service.AccessoryInformation)
-                .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
-                .setCharacteristic(Characteristic.Model, accessory.context.model);
+                accessory.getService(Service.AccessoryInformation)
+                    .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
+                    .setCharacteristic(Characteristic.Model, accessory.context.model);
 
-            const service = accessory.addService(Service.Lightbulb, device.name);
-            service.addCharacteristic(Characteristic.Brightness);
+                const service = accessory.addService(Service.Lightbulb, device.name);
+                service.addCharacteristic(Characteristic.Brightness);
 
-            self.accessories[accessory.UUID] = new OsramAccessory(device, accessory, self.log, state);
-            self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory])
-            self.log('New osram device added...');
+                self.accessories[accessory.UUID] = new OsramAccessory(device, accessory, self.log, state);
+                self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory])
+                self.log('New osram device added...');
+            });
         });
     }
 }

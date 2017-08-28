@@ -25,6 +25,11 @@ class OsramClient extends EventEmitter {
         this.serialClient.send(data, SIGNALTYPE.ENDPOINT, callback);
     }
 
+    getHADeviceInfo(addr, endpoint, callback) {
+        let data = `FE0A040102${addr}${endpoint}88`;
+        this.serialClient.send(data, SIGNALTYPE.HA_DEVICEINFO, callback);
+    }
+
     /**
      * 查询灯的开/关状态
      * 

@@ -23,6 +23,14 @@ const util = {
         let val = '0'.repeat(len - str.length) + str;
 
         return val;
+    },
+    hex2a(data) {
+        let hex = data.toString();
+        let str = '';
+        for (let i = 0; i < hex.length; i += 2) {
+            str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+        }
+        return str;
     }
 };
 
