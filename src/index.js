@@ -12,7 +12,7 @@ let PlatformAccessory, Service, Characteristic, UUIDGen;
 let deviceAddress = Object.create(null);
 let isSerialPortOpened = false;
 
-const osramClient = new OsramClient();
+let osramClient = null;
 
 module.exports = function (homebridge) {
     console.log("homebridge API version: " + homebridge.version);
@@ -37,10 +37,20 @@ class OsramPlatform {
 
         if (api) {
             this.api = api;
-            this.api.on('didFinishLaunching', () => {
-                this.log('DidFinishLaunching...');
+            this.api.on('didFinishLaunching', this.didFinishLaunching.bind(this));
+        }
+    }
 
+    didFinishLaunching() {
+        this.log('DidFinishLaunching...');
+        osramClient = new OsramClient()
+        osramClient.on('open', () => {
+            this.log('Serial port is opened...');
+            osramClient.openNetwork((err, state) => {
+                this.log('Network is opened...');
                 storage.forEach((x) => {
+                    // console.log('***'.repeat(20));
+                    // console.log('add handler...');
                     let item = storage.getItemSync(x);
                     if (this.accessories[x] === undefined) storage.removeItem(x);
                     else {
@@ -82,7 +92,9 @@ class OsramPlatform {
                     });
                 });
             });
-        }
+
+        });
+
     }
 
     configureAccessory(accessory) {

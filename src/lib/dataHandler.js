@@ -23,6 +23,12 @@ class DataHandler {
 
         return hd(null, parseInt(val, 16));
     }
+
+    networkOpenHandler(data, hd) {
+        let state = data.substr(-4, 2);
+
+        return hd(null, state);
+    }
 }
 
 module.exports = DataHandler;

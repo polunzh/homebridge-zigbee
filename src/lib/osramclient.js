@@ -11,6 +11,10 @@ class OsramClient extends EventEmitter {
         this.serialClient.on('deviceOnline', (data) => {
             this.emit('deviceOnline', data);
         });
+
+        this.serialClient.on('open', (data) => {
+            this.emit('open', data);
+        })
     }
 
     getEndPoint(addr, callback) {
@@ -88,6 +92,11 @@ class OsramClient extends EventEmitter {
 
         let data = `fe0e050402${addr}${endpoint}88${low}${high}0000`;
         this.serialClient.send(data, null);
+    }
+
+    openNetwork(callback) {
+        const data = 'FE0B02010200000088FF';
+        this.serialClient.send(data, SIGNALTYPE.NETWORK_OPEN, callback);
     }
 }
 

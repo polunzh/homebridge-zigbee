@@ -20,19 +20,41 @@ class SerialClient extends EventEmitter {
         this.commandHandlers[SIGNALTYPE.ENDPOINT] = this.dataHandler.endpointAddressHandler.bind(this);
         this.commandHandlers[SIGNALTYPE.BULB_SWITCH_STATE] = this.dataHandler.bulbSwitchStateHandler.bind(this);
         this.commandHandlers[SIGNALTYPE.BULB_BRIGHTNESS_STATE] = this.dataHandler.bulbBrightnessStateHandler.bind(this);
+        this.commandHandlers[SIGNALTYPE.NETWORK_OPEN] = this.dataHandler.networkOpenHandler.bind(this);
+
+        this.tempData = '';
+        this.tempLength = -1;
 
         this.port = new SerialPort(config.SERIALPORT, {
             baudRate: 115200
         });
 
-        this.port.on('open', function () {
-            console.log('Serial port is opened...');
+        this.port.on('open', () => {
+            this.emit('open');
         });
 
         this.port.on('data', (data) => {
-            data = data.toString('hex');
+            data = data.toString('hex').toLowerCase();
+            console.log(`data received...${data}`);
 
-            // console.log(`data received...${data}`);
+
+            if (data.startsWith('fe')) {
+                this.tempLength = parseInt(data.substr(2, 2), 16) * 2;
+                this.tempData = data;
+                if (this.tempLength !== this.tempData.length) {
+                    return;
+                }
+            } else {
+                this.tempData += data;
+
+                if (this.tempLength !== this.tempData.length) return;
+            }
+
+            data = this.tempData;
+            this.tempData = '';
+            this.tempLength = -1;
+
+            console.log(`data receive completed...${data}`);
 
             if (!this.checkReceiveData(data)) return; // 如果
 
@@ -94,7 +116,7 @@ class SerialClient extends EventEmitter {
 
         const command = data.substr(6, 2);
 
-        if (command.startsWith('4')) return; // 如果是串口的应答帧则忽略
+        if (!command.startsWith('41') && command.startsWith('4')) return; // 如果是串口的应答帧则忽略
 
         if (command === SIGNALTYPE.DEVICE_ONLINE) return this.deivceOnline(data);
 
@@ -106,7 +128,6 @@ class SerialClient extends EventEmitter {
 
         if (typeof (this.handler) === 'function' && command === this.signalType &&
             typeof (this.commandHandlers[this.signalType]) === 'function') {
-
             this.commandHandlers[this.signalType](data, this.handler);
         }
 

@@ -4,7 +4,8 @@ module.exports = {
         ENDPOINT: '83',
         BULB_SWITCH_STATE: '85',
         BULB_BRIGHTNESS_STATE: '86',
-        BULB_COLORTEMPERATURE_STATE: '88'
+        BULB_COLORTEMPERATURE_STATE: '88',
+        NETWORK_OPEN: '41',
     },
-    SERIALPORT: 'COM10'
+    SERIALPORT: 'COM12'
 };
