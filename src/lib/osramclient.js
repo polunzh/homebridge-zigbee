@@ -17,7 +17,7 @@ class OsramClient extends EventEmitter {
 
         this.serialClient.on('open', (data) => {
             this.emit('open', data);
-        })
+        });
     }
 
     getEndPoint(addr, callback) {
