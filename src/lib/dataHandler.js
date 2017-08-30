@@ -1,10 +1,22 @@
 const util = require('./util');
 class DataHandler {
+
     endpointAddressHandler(data, hd) {
         const addr = data.substr(10, 4);
         const endpoint = data.substr(-4, 2);
 
+        console.log('***'.repeat(10));
+        console.log(data);
+        console.log(endpoint);
         return hd(null, { addr, endpoint });
+    }
+
+    networkDeviceTypeInfoHandler(data, hd) {
+        let dIdL = data.substr(24, 2);
+        let dIdH = data.substr(26, 2);
+        let dataType = dIdH + dIdL;
+
+        return hd(null, dataType);
     }
 
     haDeviceInfoHandler(data, hd) {
@@ -21,9 +33,7 @@ class DataHandler {
         if (modelBit.toLowerCase() !== emptyFlag) model = util.hex2a(modelBit);
         if (firmBit.toLowerCase() !== emptyFlag) firm = util.hex2a(firmBit);
 
-        console.log(manuNameBit, modelBit, firmBit);
-        console.log(manuName, model, firm);
-        return { manuName, model, firm };
+        return hd(null, { manuName, model, firm });
     }
 
     bulbSwitchStateHandler(data, hd) {

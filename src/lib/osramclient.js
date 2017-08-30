@@ -25,6 +25,12 @@ class OsramClient extends EventEmitter {
         this.serialClient.send(data, SIGNALTYPE.ENDPOINT, callback);
     }
 
+    getDeviceTypeInfo(addr, endpoint, callback) {
+        let data = `FE0A020402${addr}${endpoint}88`;
+        console.log(data);
+        this.serialClient.send(data, SIGNALTYPE.NETWORK_DEVICETYPEINFO, callback);
+    }
+
     getHADeviceInfo(addr, endpoint, callback) {
         let data = `FE0A040102${addr}${endpoint}88`;
         this.serialClient.send(data, SIGNALTYPE.HA_DEVICEINFO, callback);

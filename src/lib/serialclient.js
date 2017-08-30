@@ -24,6 +24,7 @@ class SerialClient extends EventEmitter {
         this.commandHandlers[SIGNALTYPE.BULB_SWITCH_STATE] = this.dataHandler.bulbSwitchStateHandler.bind(this);
         this.commandHandlers[SIGNALTYPE.BULB_BRIGHTNESS_STATE] = this.dataHandler.bulbBrightnessStateHandler.bind(this);
         this.commandHandlers[SIGNALTYPE.NETWORK_OPEN] = this.dataHandler.networkOpenHandler.bind(this);
+        this.commandHandlers[SIGNALTYPE.NETWORK_DEVICETYPEINFO] = this.dataHandler.networkDeviceTypeInfoHandler.bind(this);
 
         this.tempData = '';
         this.tempLength = -1;
@@ -115,6 +116,7 @@ class SerialClient extends EventEmitter {
 
     handleData(data) {
 
+        console.log('data:' + data);
         const command = data.substr(4, 4);
 
 

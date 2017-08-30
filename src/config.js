@@ -7,6 +7,7 @@ module.exports = {
         BULB_BRIGHTNESS_STATE: '0586',
         BULB_COLORTEMPERATURE_STATE: '0588',
         NETWORK_OPEN: '0241',
+        NETWORK_DEVICETYPEINFO: '0284'
     },
-    SERIALPORT: 'COM11'
+    SERIALPORT: 'COM15'
 };
