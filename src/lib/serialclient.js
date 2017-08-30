@@ -19,10 +19,12 @@ class SerialClient extends EventEmitter {
         this.dataHandler = new DataHandler();
 
         this.commandHandlers[SIGNALTYPE.DEVICE_ONLINE] = this.deivceOnline.bind(this);
+        this.commandHandlers[SIGNALTYPE.HA_DEVICEINFO] = this.dataHandler.haDeviceInfoHandler.bind(this);
         this.commandHandlers[SIGNALTYPE.ENDPOINT] = this.dataHandler.endpointAddressHandler.bind(this);
         this.commandHandlers[SIGNALTYPE.BULB_SWITCH_STATE] = this.dataHandler.bulbSwitchStateHandler.bind(this);
         this.commandHandlers[SIGNALTYPE.BULB_BRIGHTNESS_STATE] = this.dataHandler.bulbBrightnessStateHandler.bind(this);
         this.commandHandlers[SIGNALTYPE.NETWORK_OPEN] = this.dataHandler.networkOpenHandler.bind(this);
+        this.commandHandlers[SIGNALTYPE.NETWORK_DEVICETYPEINFO] = this.dataHandler.networkDeviceTypeInfoHandler.bind(this);
 
         this.tempData = '';
         this.tempLength = -1;
@@ -114,10 +116,11 @@ class SerialClient extends EventEmitter {
 
     handleData(data) {
 
+        console.log('data:' + data);
         const command = data.substr(4, 4);
 
-        if (command !== SIGNALTYPE.NETWORK_OPEN && command[2] === '4') return; // 如果是串口的应答帧则忽略
 
+        if (command !== SIGNALTYPE.NETWORK_OPEN && command[2] === '4') return; // 如果是串口的应答帧则忽略
         if (command === SIGNALTYPE.DEVICE_ONLINE) return this.deivceOnline(data);
 
         // 如果没有回调函数则重置，开始下一个请求
