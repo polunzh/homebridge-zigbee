@@ -99,7 +99,6 @@ class OsramPlatform {
     addAccessory(device, uuid) {
         const self = this;
 
-        console.log(device);
         osramClient.getDeviceTypeInfo(device.addr, device.endpoint, (err, deviceType) => {
             console.log('---'.repeat(20));
             console.log(deviceType);
@@ -148,7 +147,7 @@ class OsramAccessory {
     constructor(device, accessory, log, data) {
         this.log = log;
         this.accessory = accessory;
-        this.power = data.power || 0;
+        this.power = data.power || false;
         this.brightness = data.brightness || 0;
 
         if (!(accessory instanceof PlatformAccessory)) this.log('ERROR \n', this);
@@ -203,6 +202,8 @@ class OsramAccessory {
         osramClient.getBulbSwitchState(this.device.addr, this.device.endpoint, (err, val) => {
             if (err) return callback(err);
 
+            console.log('getpower'.repeat(20));
+            console.log(val);
             callback(null, val);
         });
     }
