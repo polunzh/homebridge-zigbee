@@ -69,8 +69,6 @@ class OsramPlatform {
 
                 osramClient.on('deviceOnline', (deviceInfo) => {
                     osramClient.getEndPoint(deviceInfo.addr, (err, endpointInfo) => {
-                        console.log('ddd'.repeat(10));
-                        console.log(endpointInfo);
                         if (err) { this.log(err); return false };
                         const uuid = UUIDGen.generate(deviceInfo.mac);
 
@@ -202,8 +200,6 @@ class OsramAccessory {
         osramClient.getBulbSwitchState(this.device.addr, this.device.endpoint, (err, val) => {
             if (err) return callback(err);
 
-            console.log('getpower'.repeat(20));
-            console.log(val);
             callback(null, val);
         });
     }
