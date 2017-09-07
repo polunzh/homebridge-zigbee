@@ -9,5 +9,5 @@ module.exports = {
         NETWORK_OPEN: '0241',
         NETWORK_DEVICETYPEINFO: '0284'
     },
-    SERIALPORT: '/dev/ttyUSB0'
+    SERIALPORT: '/dev/ttyS3'
 };

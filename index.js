@@ -19,7 +19,9 @@ const logger = debug('homebridge-osram:index');
 module.exports = function (homebridge) {
     logger("homebridge API version: " + homebridge.version);
 
-    storage.initSync({ dir: path.join(process.cwd(), '.node-persist', 'homebridge-osram') });
+    storage.initSync({
+        dir: path.join(process.cwd(), '.node-persist', 'homebridge-osram')
+    });
 
     PlatformAccessory = homebridge.platformAccessory;
     Service = homebridge.hap.Service;
@@ -69,17 +71,16 @@ class OsramPlatform {
 
                 osramClient.on('deviceOnline', (deviceInfo) => {
                     osramClient.getEndPoint(deviceInfo.addr, (err, endpointInfo) => {
-                        if (err) { this.log(err); return false };
+                        if (err) {
+                            this.log(err);
+                            return false
+                        };
                         const uuid = UUIDGen.generate(deviceInfo.mac);
 
                         //如果已存在该设备，则更新Accessory中的网络地址和终端号
-                        if (this.accessories[uuid]) {
-                            this.accessories[uuid].device.addr = deviceInfo.addr;
-                            this.accessories[uuid].device.endpoint = endpointInfo.endpoint;
 
-                            this.log('date device network address and endpoint updated...');
-                            return false;
-                        } else {
+                        if (this.accessories[uuid] === undefined) {
+                            this.log('add new device');
                             this.addAccessory(new Device(deviceInfo.mac, deviceInfo.addr, endpointInfo.endpoint), uuid);
                         }
                     });
@@ -131,11 +132,12 @@ class OsramPlatform {
                                 endpoint: device.endpoint
                             });
 
-                            self.log('New osram device added...');
+                            self.log('New device is added...');
                         });
                     });
                     break;
-                default: break;
+                default:
+                    break;
             }
         });
     }
@@ -180,13 +182,19 @@ class OsramAccessory {
                 service
                     .getCharacteristic(Characteristic.Brightness)
                     .setValue(this.brightness)
-                    .setProps({ minValue: 0, maxValue: 100 })
+                    .setProps({
+                        minValue: 0,
+                        maxValue: 100
+                    })
                     .on('set', this.setBrightness.bind(this));
                 break;
             case Characteristic.ColorTemperature:
                 service.getCharacteristic(Characteristic.ColorTemperature)
                     .setValue(200)
-                    .setProps({ minValue: 160, maxValue: 370 })
+                    .setProps({
+                        minValue: 160,
+                        maxValue: 370
+                    })
                     .on('set', this.setColorTemperature);
         }
     }
