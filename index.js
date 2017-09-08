@@ -7,8 +7,8 @@ const _ = require('lodash');
 const util = require('./lib/util');
 const OsramClient = require('./lib/osramclient');
 
-const PLATFORM_NAME = 'Osram';
-const PLUGIN_NAME = 'homebridge-osram';
+const PLATFORM_NAME = 'Zigbee';
+const PLUGIN_NAME = 'homebridge-zigbee';
 let PlatformAccessory, Service, Characteristic, UUIDGen;
 let deviceAddress = Object.create(null);
 let isSerialPortOpened = false;
