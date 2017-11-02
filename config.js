@@ -8,7 +8,7 @@ module.exports = {
         BULB_COLORTEMPERATURE_STATE: '0588',
         NETWORK_OPEN: '0241',
         NETWORK_DEVICETYPEINFO: '0284',
-        FIRMWARE: '0401',
+        FIRMWARE: '0141',
     },
     SERIALPORT: '/dev/ttyS3'
 };
