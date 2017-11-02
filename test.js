@@ -27,9 +27,13 @@ osramclient.openNetwork(function(err, res){
 	console.log(err, res);
     });
     osramclient.switchBulb(false, saddr, sendpoint);
-*/
     osramclient.getBulbSwitchState(osaddr, osendpoint, function(err, res) {
 	console.log('getBulbSwitchState...'.repeat(10));
+	console.log(err, res);
+    });
+*/
+    osramclient.getFirmware(osaddr, osendpoint, function(err, res) {
+	console.log('firmware...'.repeat(10));
 	console.log(err, res);
     });
 });
