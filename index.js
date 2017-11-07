@@ -79,7 +79,7 @@ class OsramPlatform {
                         console.log('--------endpoint info-------');
                         console.log(endpointInfo);
 
-                        deviceInfo.endpoints.forEach((endpoint) => {
+                        endpointInfo.endpoints.forEach((endpoint) => {
                             const uuid = UUIDGen.generate(deviceInfo.mac + endpoint);
                             // 如果已存在该设备，则更新Accessory中的网络地址和终端号
                             if (this.accessories[uuid] === undefined) {
