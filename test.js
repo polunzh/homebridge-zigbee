@@ -8,32 +8,37 @@ const osramclient = new OsramClient();
 const osaddr = '542b';
 const osendpoint = '03';
 
-const saddr = '6b8f';
-const sendpoint = '0A';
+const saddr = '9da2';
+const sendpoint = '0a';
 
-osramclient.openNetwork(function(err, res){
-	console.log('open network'.repeat(10));
-	console.log(err, res);
-	/*
-
-	   osramclient.setBrightness(21, 'f5ad', '08');
-
-	   osramclient.getBulbSwitchState(osaddr, osendpoint, function(err, res) {
-	   console.log('getBulbSwitchState...'.repeat(10));
-	   console.log(err, res);
-	   });
-	   osramclient.getFirmware(osaddr, osendpoint, function(err, res) {
-	   console.log('firmware...'.repeat(10));
-	   console.log(err, res);
-	   });
-	   osramclient.getBulbBrightness(saddr, sendpoint, function(err, res) {
-	   console.log('control...'.repeat(10));
-	   console.log(err, res);
-	   });
-	osramclient.getEndPoint(saddr, function(err, res) {
-			console.log('getEndPoint...'.repeat(10));
-			console.log(err, res);
-			});
-	 */
-	 osramclient.switchBulb(true, saddr, sendpoint);
+osramclient.openNetwork(function(err, res) {
+		console.log('--------------open network-------------');
+		console.log(err, res);
+		/*
+		   osramclient.setBrightness(21, saddr, sendpoint);
+		   osramclient.getBulbBrightness(saddr, sendpoint, function(err, res) {
+		   console.log('control...'.repeat(10));
+		   console.log(err, res);
+		   });
+		   osramclient.getBulbSwitchState(saddr, sendpoint, function(err, res) {
+		   console.log('getBulbSwitchState...'.repeat(10));
+		   console.log(err, res);
+		   });
+		   osramclient.switchBulb(false, saddr, sendpoint);
+		   osramclient.getEndPoint(saddr, function(err, res) {
+		   console.log('getEndPoint...'.repeat(10));
+		   console.log(err, res);
+		   });
+		   osramclient.getDeviceTypeInfo(saddr, sendpoint, function(err, res){
+		   console.log(res);
+		   });
+		osramclient.getFirmware(saddr, sendpoint, function(err, res) {
+				console.log('firmware...'.repeat(10));
+				console.log(err, res);
+				});
+		 */
+		osramclient.getHADeviceInfo(saddr, sendpoint, function(err, res) {
+				console.log('------HA DEVICE info------');
+				console.log(err, res);
+				});
 });
