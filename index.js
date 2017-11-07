@@ -71,10 +71,13 @@ class OsramPlatform {
 
                 osramClient.on('deviceOnline', (deviceInfo) => {
                     osramClient.getEndPoint(deviceInfo.addr, (err, endpointInfo) => {
+                        console.log('--------endpoint info-------')
+                        console.log(endpointInfo);
                         if (err) {
                             this.log(err);
                             return false
                         };
+
                         const uuid = UUIDGen.generate(deviceInfo.mac);
 
                         // 如果已存在该设备，则更新Accessory中的网络地址和终端号
