@@ -71,23 +71,22 @@ class OsramPlatform {
 
                 osramClient.on('deviceOnline', (deviceInfo) => {
                     osramClient.getEndPoint(deviceInfo.addr, (err, endpointInfo) => {
-                        console.log('--------endpoint info-------')
-                        console.log(endpointInfo);
                         if (err) {
                             this.log(err);
                             return false
                         };
 
-                        const uuid = UUIDGen.generate(deviceInfo.mac);
+                        console.log('--------endpoint info-------');
+                        console.log(endpointInfo);
 
-                        // 如果已存在该设备，则更新Accessory中的网络地址和终端号
-
-                        if (this.accessories[uuid] === undefined && Array.isArray(deviceInfo.endpoints)) {
-                            deviceInfo.endpoints.forEach((endpoint) => {
+                        deviceInfo.endpoints.forEach((endpoint) => {
+                            const uuid = UUIDGen.generate(deviceInfo.mac + endpoint);
+                            // 如果已存在该设备，则更新Accessory中的网络地址和终端号
+                            if (this.accessories[uuid] === undefined) {
                                 this.log(`add new device, addr: ${deviceInfo.addr}, endpoint: ${endpoint}`);
                                 this.addAccessory(new Device(deviceInfo.mac, deviceInfo.addr, endpointInfo.endpoint), uuid);
-                            });
-                        }
+                            }
+                        });
                     });
                 });
             });
