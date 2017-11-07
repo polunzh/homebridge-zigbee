@@ -61,7 +61,7 @@ class OsramPlatform {
                             item.endpoint,
                             (err, state) => {
                                 this.accessories[x] =
-                                    new OsramAccessory(new Device(item.mac, item.addr, item.endpoint),
+                                    new ZigbeeAccessory(new Device(item.mac, item.addr, item.endpoint),
                                         this.accessories[x],
                                         this.log,
                                         state);
@@ -77,11 +77,13 @@ class OsramPlatform {
                         };
                         const uuid = UUIDGen.generate(deviceInfo.mac);
 
-                        //如果已存在该设备，则更新Accessory中的网络地址和终端号
+                        // 如果已存在该设备，则更新Accessory中的网络地址和终端号
 
-                        if (this.accessories[uuid] === undefined) {
-                            this.log('add new device');
-                            this.addAccessory(new Device(deviceInfo.mac, deviceInfo.addr, endpointInfo.endpoint), uuid);
+                        if (this.accessories[uuid] === undefined && Array.isArray(deviceInfo.endpoints)) {
+                            deviceInfo.endpoints.forEach((endpoint) => {
+                                this.log(`add new device, addr: ${deviceInfo.addr}, endpoint: ${endpoint}`);
+                                this.addAccessory(new Device(deviceInfo.mac, deviceInfo.addr, endpointInfo.endpoint), uuid);
+                            });
                         }
                     });
                 });
@@ -99,9 +101,40 @@ class OsramPlatform {
         const self = this;
 
         osramClient.getDeviceTypeInfo(device.addr, device.endpoint, (err, deviceType) => {
-            console.log('---'.repeat(20));
+            console.log('--------------devicetype-------------');
             console.log(deviceType);
+
             switch (deviceType) {
+                case '0009':
+                    osramClient.getHADeviceInfo(device.addr, device.endpoint, (err, haInfo) => {
+                        if (err) throw err;
+                        osramClient.getBulbState(device.addr, device.endpoint, (err, state) => {
+                            if (err) throw err;
+
+                            const accessory = new PlatformAccessory(device.name, uuid);
+                            accessory.context.name = haInfo.manuName ? haInfo.manuName + uuid : 'DEFAULT';
+                            accessory.context.make = haInfo.manuName || 'DEFAULT';
+                            accessory.context.model = haInfo.model || 'DEFAULT';
+
+                            accessory.getService(Service.AccessoryInformation)
+                                .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
+                                .setCharacteristic(Characteristic.Model, accessory.context.model);
+
+                            self.accessories[accessory.UUID] = new ZigbeeAccessory(device, accessory, self.log, state);
+                            self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+
+                            // 临时存储
+                            storage.setItem(uuid, {
+                                mac: device.mac,
+                                addr: device.addr,
+                                endpoint: device.endpoint
+                            });
+
+                            self.log(`New device is added, addr: ${device.addr}, endpoint: ${device.endpoint}...`);
+                        });
+                    });
+                    break;
+                case '0101':
                 case '0102':
                     this.log('Color dimmable Light');
 
@@ -122,7 +155,10 @@ class OsramPlatform {
                             const service = accessory.addService(Service.Lightbulb, device.name);
                             service.addCharacteristic(Characteristic.Brightness);
 
-                            self.accessories[accessory.UUID] = new OsramAccessory(device, accessory, self.log, state);
+                            const zigbeeAccessory = new ZigbeeAccessory(device, accessory, self.log, state);
+                            zigbeeAccessory.addEventHandler(Service.Lightbulb, Characteristic.Brightness);
+                            self.accessories[accessory.UUID] = zigbeeAccessory;
+                            this.addEventHandler(Service.Lightbulb, Characteristic.Brightness);
                             self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
 
                             // 临时存储
@@ -143,7 +179,7 @@ class OsramPlatform {
     }
 }
 
-class OsramAccessory {
+class ZigbeeAccessory {
     constructor(device, accessory, log, data) {
         this.log = log;
         this.accessory = accessory;
@@ -158,7 +194,6 @@ class OsramAccessory {
 
     addEventHandlers() {
         this.addEventHandler(Service.Lightbulb, Characteristic.On);
-        this.addEventHandler(Service.Lightbulb, Characteristic.Brightness);
     }
 
     addEventHandler(service, characteristic) {
