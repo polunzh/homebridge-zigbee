@@ -124,7 +124,9 @@ class OsramPlatform {
                                 .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
                                 .setCharacteristic(Characteristic.Model, accessory.context.model);
 
-                            self.accessories[accessory.UUID] = new ZigbeeAccessory(device, accessory, self.log, state);
+                            const zigbeeAccessory = new ZigbeeAccessory(device, accessory, self.log, state);
+                            self.accessories[accessory.UUID] = zigbeeAccessory;
+                            zigbeeAccessory.addEventHandler(Service.Outlet, Characteristic.On);
                             self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
 
                             // 临时存储
@@ -163,6 +165,7 @@ class OsramPlatform {
                             service.addCharacteristic(Characteristic.Brightness);
 
                             const zigbeeAccessory = new ZigbeeAccessory(device, accessory, self.log, state);
+                            zigbeeAccessory.addEventHandler(Service.Lightbulb, Characteristic.On);
                             zigbeeAccessory.addEventHandler(Service.Lightbulb, Characteristic.Brightness);
                             self.accessories[accessory.UUID] = zigbeeAccessory;
                             self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
@@ -198,9 +201,7 @@ class ZigbeeAccessory {
         this.updateReachability(device);
     }
 
-    addEventHandlers() {
-        this.addEventHandler(Service.Lightbulb, Characteristic.On);
-    }
+    addEventHandlers() {}
 
     addEventHandler(service, characteristic) {
         if (!(service instanceof Service)) {
