@@ -5,7 +5,7 @@ const path = require('path');
 const SerialPort = require('serialport');
 const _ = require('lodash');
 const util = require('./lib/util');
-const OsramClient = require('./lib/osramclient');
+const ZigbeeClient = require('./lib/zigbeeClient');
 
 const PLATFORM_NAME = 'Zigbee';
 const PLUGIN_NAME = 'homebridge-zigbee';
@@ -47,7 +47,7 @@ class OsramPlatform {
 
     didFinishLaunching() {
         this.log('DidFinishLaunching...');
-        osramClient = new OsramClient()
+        osramClient = new ZigbeeClient()
         osramClient.on('open', () => {
             this.log('Serial port is opened...');
             osramClient.openNetwork((err, state) => {
