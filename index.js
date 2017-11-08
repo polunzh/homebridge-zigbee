@@ -160,7 +160,6 @@ class OsramPlatform {
                             const zigbeeAccessory = new ZigbeeAccessory(device, accessory, self.log, state);
                             zigbeeAccessory.addEventHandler(Service.Lightbulb, Characteristic.Brightness);
                             self.accessories[accessory.UUID] = zigbeeAccessory;
-                            this.addEventHandler(Service.Lightbulb, Characteristic.Brightness);
                             self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
 
                             // 临时存储
