@@ -13,7 +13,7 @@ let PlatformAccessory, Service, Characteristic, UUIDGen;
 let deviceAddress = Object.create(null);
 let isSerialPortOpened = false;
 
-let osramClient = null;
+let zigbeeClient = null;
 const logger = debug('homebridge-osram:index');
 
 module.exports = function (homebridge) {
@@ -47,16 +47,16 @@ class OsramPlatform {
 
     didFinishLaunching() {
         this.log('DidFinishLaunching...');
-        osramClient = new ZigbeeClient()
-        osramClient.on('open', () => {
+        zigbeeClient = new ZigbeeClient()
+        zigbeeClient.on('open', () => {
             this.log('Serial port is opened...');
-            osramClient.openNetwork((err, state) => {
+            zigbeeClient.openNetwork((err, state) => {
                 this.log('Network is opened...');
                 storage.forEach((x) => {
                     let item = storage.getItemSync(x);
                     if (this.accessories[x] === undefined) storage.removeItem(x);
                     else {
-                        osramClient.getBulbState(
+                        zigbeeClient.getBulbState(
                             item.addr,
                             item.endpoint,
                             (err, state) => {
@@ -69,8 +69,8 @@ class OsramPlatform {
                     }
                 });
 
-                osramClient.on('deviceOnline', (deviceInfo) => {
-                    osramClient.getEndPoint(deviceInfo.addr, (err, endpointInfo) => {
+                zigbeeClient.on('deviceOnline', (deviceInfo) => {
+                    zigbeeClient.getEndPoint(deviceInfo.addr, (err, endpointInfo) => {
                         if (err) {
                             this.log(err);
                             return false
@@ -102,19 +102,21 @@ class OsramPlatform {
     addAccessory(device, uuid) {
         const self = this;
 
-        osramClient.getDeviceTypeInfo(device.addr, device.endpoint, (err, deviceType) => {
+        zigbeeClient.getDeviceTypeInfo(device.addr, device.endpoint, (err, deviceType) => {
             console.log('--------------devicetype-------------');
             console.log(deviceType);
 
             switch (deviceType) {
                 case '0009':
-                    osramClient.getHADeviceInfo(device.addr, device.endpoint, (err, haInfo) => {
+                    zigbeeClient.getHADeviceInfo(device.addr, device.endpoint, (err, haInfo) => {
                         if (err) throw err;
-                        osramClient.getBulbState(device.addr, device.endpoint, (err, state) => {
+                        zigbeeClient.getBulbState(device.addr, device.endpoint, (err, state) => {
                             if (err) throw err;
 
-                            const accessory = new PlatformAccessory(device.name, uuid);
-                            accessory.context.name = haInfo.manuName ? haInfo.manuName + uuid : 'DEFAULT';
+                            const deviceName = haInfo.manuName ? haInfo.manuName + uuid : 'DEFAULT';
+                            const accessory = new PlatformAccessory(deviceName, uuid);
+
+                            accessory.context.name = deviceName;
                             accessory.context.make = haInfo.manuName || 'DEFAULT';
                             accessory.context.model = haInfo.model || 'DEFAULT';
 
@@ -140,21 +142,24 @@ class OsramPlatform {
                 case '0102':
                     this.log('Color dimmable Light');
 
-                    osramClient.getHADeviceInfo(device.addr, device.endpoint, (err, haInfo) => {
+                    zigbeeClient.getHADeviceInfo(device.addr, device.endpoint, (err, haInfo) => {
                         if (err) throw err;
-                        osramClient.getBulbState(device.addr, device.endpoint, (err, state) => {
+                        zigbeeClient.getBulbState(device.addr, device.endpoint, (err, state) => {
                             if (err) throw err;
 
-                            const accessory = new PlatformAccessory(device.name, uuid);
-                            accessory.context.name = haInfo.manuName ? haInfo.manuName + uuid : 'DEFAULT';
+                            const deviceName = haInfo.manuName ? haInfo.manuName + uuid : 'DEFAULT';
+                            const accessory = new PlatformAccessory(deviceName, uuid);
+
+                            accessory.context.name = deviceName;
                             accessory.context.make = haInfo.manuName || 'DEFAULT';
                             accessory.context.model = haInfo.model || 'DEFAULT';
+
 
                             accessory.getService(Service.AccessoryInformation)
                                 .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
                                 .setCharacteristic(Characteristic.Model, accessory.context.model);
 
-                            const service = accessory.addService(Service.Lightbulb, device.name);
+                            const service = accessory.addService(Service.Lightbulb, haInfo.manuName);
                             service.addCharacteristic(Characteristic.Brightness);
 
                             const zigbeeAccessory = new ZigbeeAccessory(device, accessory, self.log, state);
@@ -241,7 +246,7 @@ class ZigbeeAccessory {
     }
 
     getPower(callback) {
-        osramClient.getBulbSwitchState(this.device.addr, this.device.endpoint, (err, val) => {
+        zigbeeClient.getBulbSwitchState(this.device.addr, this.device.endpoint, (err, val) => {
             if (err) return callback(err);
 
             callback(null, val);
@@ -249,12 +254,12 @@ class ZigbeeAccessory {
     }
 
     setPower(state, callback) {
-        osramClient.switchBulb(state, this.device.addr, this.device.endpoint);
+        zigbeeClient.switchBulb(state, this.device.addr, this.device.endpoint);
         return callback(null);
     }
 
     setBrightness(value, callback) {
-        osramClient.setBrightness(value, this.device.addr, this.device.endpoint);
+        zigbeeClient.setBrightness(value, this.device.addr, this.device.endpoint);
         return callback(null);
     }
 
@@ -268,6 +273,5 @@ class Device {
         this.mac = mac;
         this.addr = addr;
         this.endpoint = endpoint;
-        this.name = `OSRAM-${mac}`;
     }
 }
