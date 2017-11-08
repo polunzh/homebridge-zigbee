@@ -84,8 +84,7 @@ class OsramPlatform {
                             // 如果已存在该设备，则更新Accessory中的网络地址和终端号
                             if (this.accessories[uuid] === undefined) {
                                 this.log(`add new device, addr: ${deviceInfo.addr}, endpoint: ${endpoint}`);
-                                console.log(`add new device, addr: ${deviceInfo.addr}, endpoint: ${endpoint}`);
-                                this.addAccessory(new Device(deviceInfo.mac, deviceInfo.addr, endpointInfo.endpoint), uuid);
+                                this.addAccessory(new Device(deviceInfo.mac, deviceInfo.addr, endpoint), uuid);
                             }
                         });
                     });
