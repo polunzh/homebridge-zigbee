@@ -142,6 +142,7 @@ class OsramPlatform {
                     break;
                 case '0101':
                 case '0102':
+                    break;
                     this.log('Color dimmable Light');
 
                     zigbeeClient.getHADeviceInfo(device.addr, device.endpoint, (err, haInfo) => {
@@ -155,7 +156,6 @@ class OsramPlatform {
                             accessory.context.name = deviceName;
                             accessory.context.make = haInfo.manuName || 'DEFAULT';
                             accessory.context.model = haInfo.model || 'DEFAULT';
-
 
                             accessory.getService(Service.AccessoryInformation)
                                 .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
@@ -177,7 +177,7 @@ class OsramPlatform {
                                 endpoint: device.endpoint
                             });
 
-                            self.log('New device is added...');
+                            self.log(`New device is added, addr: ${device.addr}, endpoint: ${device.endpoint}...`);
                         });
                     });
                     break;
