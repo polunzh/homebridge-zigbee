@@ -1,7 +1,7 @@
 const ZigbeeClient = require('./lib/zigbeeClient');
 const util = require('./lib/util');
 
-const osramclient = new ZigbeeClient();
+const zigbeeClient = new ZigbeeClient();
 // console.log(util.generateCommand('FE0E050202d37a038800dd0000'));
 // console.log(util.generateCommand('FE0E050402d37a038899000200'));
 
@@ -11,7 +11,7 @@ const osendpoint = '03';
 const saddr = '9da2';
 const sendpoint = '0a';
 
-osramclient.openNetwork(function(err, res) {
+zigbeeClient.openNetwork(function(err, res) {
 		console.log('--------------open network-------------');
 		console.log(err, res);
 		/*

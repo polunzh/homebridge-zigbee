@@ -6,7 +6,6 @@ const SerialPort = require('serialport');
 const _ = require('lodash');
 const util = require('./lib/util');
 const ZigbeeClient = require('./lib/zigbeeClient');
-const deviceTypeHandler = require('./lib/deviceTypeHandler');
 
 const PLATFORM_NAME = 'Zigbee';
 const PLUGIN_NAME = 'homebridge-zigbee';
@@ -35,6 +34,7 @@ module.exports = function (homebridge) {
 class ZigbeePlatform {
     constructor(log, config, api) {
         log('Osram Platform Init');
+        const self = this;
 
         this.log = log;
         this.config = config;
@@ -44,9 +44,53 @@ class ZigbeePlatform {
             this.api = api;
             this.api.on('didFinishLaunching', this.didFinishLaunching.bind(this));
         }
+
+        this.eventHandlers = {
+            '0009': function mainsPowerHandler(zigbeeAccessory) {
+                zigbeeAccessory.addEventHandler(Service.Outlet, Characteristic.On);
+            },
+            '0101': function dimmableLightHandler(zigbeeAccessory) {
+                zigbeeAccessory.addEventHandler(Service.Lightbulb, Characteristic.On);
+                zigbeeAccessory.addEventHandler(Service.Lightbulb, Characteristic.Brightness);
+            },
+            '0102': function colorDimmableLightHandler(zigbeeAccessory) {
+                zigbeeAccessory.addEventHandler(Service.Lightbulb, Characteristic.On);
+                zigbeeAccessory.addEventHandler(Service.Lightbulb, Characteristic.Brightness);
+            }
+        };
+
+        this.deviceTypeHandlers = {
+            '0009': function mainsPowerHandler(device, accessory, log) {
+                const service = accessory.addService(Service.Outlet, accessory.context.name);
+
+                const zigbeeAccessory = new ZigbeeAccessory(device, accessory, log, device.state);
+                self.eventHandlers['0009'](zigbeeAccessory);
+
+                return zigbeeAccessory;
+            },
+            '0101': function dimmableLightHandler(device, accessory, log) {
+                const service = accessory.addService(Service.Lightbulb, accessory.context.name);
+                service.addCharacteristic(Characteristic.Brightness);
+
+                const zigbeeAccessory = new ZigbeeAccessory(device, accessory, log, device.state);
+                self.eventHandlers['0101'](zigbeeAccessory);
+
+                return zigbeeAccessory;
+            },
+            '0102': function colorDimmableLightHandler(device, accessory, log) {
+                const service = accessory.addService(Service.Lightbulb, accessory.context.name);
+                service.addCharacteristic(Characteristic.Brightness);
+
+                const zigbeeAccessory = new ZigbeeAccessory(device, accessory, log, device.state);
+                self.eventHandlers['0102'](zigbeeAccessory);
+
+                return zigbeeAccessory;
+            }
+        };
     }
 
     didFinishLaunching() {
+        const self = this;
         this.log('DidFinishLaunching...');
         zigbeeClient = new ZigbeeClient()
         zigbeeClient.on('open', () => {
@@ -61,11 +105,12 @@ class ZigbeePlatform {
                             item.addr,
                             item.endpoint,
                             (err, state) => {
-                                this.accessories[x] =
+                                self.accessories[x] =
                                     new ZigbeeAccessory(new Device(item.mac, item.addr, item.endpoint),
                                         this.accessories[x],
                                         this.log,
                                         state);
+                                self.eventHandlers[self.accessories[x].context.deviceType](self.accessories[x]);
                             });
                     }
                 });
@@ -109,15 +154,13 @@ class ZigbeePlatform {
             this.getDeviceInfo(device.addr, device.endpoint, (err, deviceInfo) => {
                 if (err) throw err;
 
-                const handler = deviceTypeHandler[deviceType];
+                const handler = self.deviceTypeHandlers[deviceType];
                 if (handler) {
-                    const accessory = this.generateAccessory({
-                        manueName: deviceInfo.manuName,
-                        model: deviceInfo.model
-                    });
+                    const accessory = this.generateAccessory(deviceInfo.manuName, deviceInfo.model, uuid);
+                    accessory.context.deviceType = deviceType;
 
                     device.state = deviceInfo.state;
-                    const zigbeeAccessory = handler(device, accessory, self.log)
+                    const zigbeeAccessory = handler(device, accessory, Service, self.log)
                     self.accessories[accessory.UUID] = zigbeeAccessory;
                     self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
 
@@ -135,10 +178,10 @@ class ZigbeePlatform {
     }
 
     getDeviceInfo(addr, endpoint, callback) {
-        zigbeeClient.getHADeviceInfo(device.addr, device.endpoint, (err, haInfo) => {
+        zigbeeClient.getHADeviceInfo(addr, endpoint, (err, haInfo) => {
             if (err) return callback(err);
 
-            zigbeeClient.getBulbState(device.addr, device.endpoint, (err, state) => {
+            zigbeeClient.getBulbState(addr, endpoint, (err, state) => {
                 if (err) return callback(err);
 
                 return callback(null, {
@@ -150,9 +193,9 @@ class ZigbeePlatform {
         });
     }
 
-    generateAccessory(manuName, model) {
-        manuName = deviceInfo.manuName ? deviceInfo.manuName.trim() : 'DEFAULT';
-        model = deviceInfo.model ? device.model.trim() : 'DEFAULT';
+    generateAccessory(manuName, model, uuid) {
+        manuName = manuName ? manuName.trim() : 'DEFAULT';
+        model = model ? model.trim() : 'DEFAULT';
 
         const deviceName = `${manuName}_${uuid}`;
         const accessory = new PlatformAccessory(deviceName, uuid);
@@ -169,14 +212,23 @@ class ZigbeePlatform {
     }
 }
 
+class Device {
+    constructor(mac, addr, endpoint) {
+        this.mac = mac;
+        this.addr = addr;
+        this.endpoint = endpoint;
+    }
+}
+
 class ZigbeeAccessory {
     constructor(device, accessory, log, data) {
         this.log = log;
+        this.context = accessory.context;
         this.accessory = accessory;
         this.power = data.power || false;
         this.brightness = data.brightness || 0;
 
-        if (!(accessory instanceof PlatformAccessory)) this.log('ERROR \n', this);
+        // if (!(accessory instanceof PlatformAccessory)) this.log('ERROR \n', this);
 
         this.addEventHandlers();
         this.updateReachability(device);
@@ -247,13 +299,5 @@ class ZigbeeAccessory {
 
     setColorTemperature(value, callback) {
         return callback(null);
-    }
-}
-
-class Device {
-    constructor(mac, addr, endpoint) {
-        this.mac = mac;
-        this.addr = addr;
-        this.endpoint = endpoint;
     }
 }
