@@ -124,6 +124,8 @@ class OsramPlatform {
                                 .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
                                 .setCharacteristic(Characteristic.Model, accessory.context.model);
 
+                            const service = accessory.addService(Service.Outlet, haInfo.manuName);
+
                             const zigbeeAccessory = new ZigbeeAccessory(device, accessory, self.log, state);
                             self.accessories[accessory.UUID] = zigbeeAccessory;
                             zigbeeAccessory.addEventHandler(Service.Outlet, Characteristic.On);
