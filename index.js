@@ -6,6 +6,7 @@ const SerialPort = require('serialport');
 const _ = require('lodash');
 const util = require('./lib/util');
 const ZigbeeClient = require('./lib/zigbeeClient');
+const deviceTypeHandler = require('./lib/deviceTypeHandler');
 
 const PLATFORM_NAME = 'Zigbee';
 const PLUGIN_NAME = 'homebridge-zigbee';
@@ -28,10 +29,10 @@ module.exports = function (homebridge) {
     Characteristic = homebridge.hap.Characteristic;
     UUIDGen = homebridge.hap.uuid;
 
-    homebridge.registerPlatform(PLUGIN_NAME, PLATFORM_NAME, OsramPlatform, true);
+    homebridge.registerPlatform(PLUGIN_NAME, PLATFORM_NAME, ZigbeePlatform, true);
 };
 
-class OsramPlatform {
+class ZigbeePlatform {
     constructor(log, config, api) {
         log('Osram Platform Init');
 
@@ -103,90 +104,68 @@ class OsramPlatform {
         const self = this;
 
         zigbeeClient.getDeviceTypeInfo(device.addr, device.endpoint, (err, deviceType) => {
-            console.log('--------------devicetype-------------');
-            console.log(deviceType);
+            this.log(`--------------devicetype: ${deviceType}-------------`);
 
-            switch (deviceType) {
-                case '0009':
-                    zigbeeClient.getHADeviceInfo(device.addr, device.endpoint, (err, haInfo) => {
-                        if (err) throw err;
-                        zigbeeClient.getBulbState(device.addr, device.endpoint, (err, state) => {
-                            if (err) throw err;
+            this.getDeviceInfo(device.addr, device.endpoint, (err, deviceInfo) => {
+                if (err) throw err;
 
-                            const deviceName = haInfo.manuName ? haInfo.manuName + uuid : 'DEFAULT';
-                            const accessory = new PlatformAccessory(deviceName, uuid);
-
-                            accessory.context.name = deviceName;
-                            accessory.context.make = haInfo.manuName || 'DEFAULT';
-                            accessory.context.model = haInfo.model || 'DEFAULT';
-
-                            accessory.getService(Service.AccessoryInformation)
-                                .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
-                                .setCharacteristic(Characteristic.Model, accessory.context.model);
-
-                            const service = accessory.addService(Service.Outlet, haInfo.manuName);
-
-                            const zigbeeAccessory = new ZigbeeAccessory(device, accessory, self.log, state);
-                            self.accessories[accessory.UUID] = zigbeeAccessory;
-                            zigbeeAccessory.addEventHandler(Service.Outlet, Characteristic.On);
-                            self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-
-                            // 临时存储
-                            storage.setItem(uuid, {
-                                mac: device.mac,
-                                addr: device.addr,
-                                endpoint: device.endpoint
-                            });
-
-                            self.log(`New device is added, addr: ${device.addr}, endpoint: ${device.endpoint}...`);
-                        });
+                const handler = deviceTypeHandler[deviceType];
+                if (handler) {
+                    const accessory = this.generateAccessory({
+                        manueName: deviceInfo.manuName,
+                        model: deviceInfo.model
                     });
-                    break;
-                case '0101':
-                case '0102':
-                    break;
-                    this.log('Color dimmable Light');
 
-                    zigbeeClient.getHADeviceInfo(device.addr, device.endpoint, (err, haInfo) => {
-                        if (err) throw err;
-                        zigbeeClient.getBulbState(device.addr, device.endpoint, (err, state) => {
-                            if (err) throw err;
+                    device.state = deviceInfo.state;
+                    const zigbeeAccessory = handler(device, accessory, self.log)
+                    self.accessories[accessory.UUID] = zigbeeAccessory;
+                    self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
 
-                            const deviceName = haInfo.manuName ? haInfo.manuName + uuid : 'DEFAULT';
-                            const accessory = new PlatformAccessory(deviceName, uuid);
-
-                            accessory.context.name = deviceName;
-                            accessory.context.make = haInfo.manuName || 'DEFAULT';
-                            accessory.context.model = haInfo.model || 'DEFAULT';
-
-                            accessory.getService(Service.AccessoryInformation)
-                                .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
-                                .setCharacteristic(Characteristic.Model, accessory.context.model);
-
-                            const service = accessory.addService(Service.Lightbulb, haInfo.manuName);
-                            service.addCharacteristic(Characteristic.Brightness);
-
-                            const zigbeeAccessory = new ZigbeeAccessory(device, accessory, self.log, state);
-                            zigbeeAccessory.addEventHandler(Service.Lightbulb, Characteristic.On);
-                            zigbeeAccessory.addEventHandler(Service.Lightbulb, Characteristic.Brightness);
-                            self.accessories[accessory.UUID] = zigbeeAccessory;
-                            self.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-
-                            // 临时存储
-                            storage.setItem(uuid, {
-                                mac: device.mac,
-                                addr: device.addr,
-                                endpoint: device.endpoint
-                            });
-
-                            self.log(`New device is added, addr: ${device.addr}, endpoint: ${device.endpoint}...`);
-                        });
+                    // 临时存储
+                    storage.setItem(uuid, {
+                        mac: device.mac,
+                        addr: device.addr,
+                        endpoint: device.endpoint
                     });
-                    break;
-                default:
-                    break;
-            }
+
+                    self.log(`New device is added, addr: ${device.addr}, endpoint: ${device.endpoint}...`);
+                }
+            });
         });
+    }
+
+    getDeviceInfo(addr, endpoint, callback) {
+        zigbeeClient.getHADeviceInfo(device.addr, device.endpoint, (err, haInfo) => {
+            if (err) return callback(err);
+
+            zigbeeClient.getBulbState(device.addr, device.endpoint, (err, state) => {
+                if (err) return callback(err);
+
+                return callback(null, {
+                    manuName: haInfo.manuName,
+                    model: haInfo.model,
+                    state
+                });
+            });
+        });
+    }
+
+    generateAccessory(manuName, model) {
+        manuName = deviceInfo.manuName ? deviceInfo.manuName.trim() : 'DEFAULT';
+        model = deviceInfo.model ? device.model.trim() : 'DEFAULT';
+
+        const deviceName = `${manuName}_${uuid}`;
+        const accessory = new PlatformAccessory(deviceName, uuid);
+
+        accessory.context.name = deviceName;
+        accessory.context.make = manuName;
+        accessory.context.model = model || 'DEFAULT';
+
+        accessory.getService(Service.AccessoryInformation)
+            .setCharacteristic(Characteristic.Manufacturer, accessory.context.make)
+            .setCharacteristic(Characteristic.Model, accessory.context.model);
+
+        return accessory;
     }
 }
 
